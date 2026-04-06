@@ -1,4 +1,4 @@
-# ModelDeployment_FastAPI
+# 1 ModelDeployment_FastAPI
 
 Download starter.ipynb notebook
 ```
@@ -122,3 +122,87 @@ for marketing.py we install the library
 pip install requests
 
 ```
+# 2 Virtual enviroment
+for virtual enviroment we will use uv which is faster than venv
+
+```
+pip install uv
+```
+
+then we activate with
+
+```
+uv init
+
+```
+
+we see two new files .python-version and pyproject.toml
+
+we can add for now only the libraries needed for predicting
+
+```
+uv add scikit-learn fastapi uvicorn
+
+```
+
+now we have in .toml the new dependencies and uv.lock is added 
+
+```
+uv add --dev requests
+```
+
+to run the web service:
+
+```
+ uv run uvicorn predict:app --host 0.0.0.0 --port 9696 --reload
+ 
+ ```
+
+ in the other terminal we run the marketing response:
+
+ ```
+uv run python marketing.py
+
+ ```
+
+ # 3 Contenarization:
+
+ To check if we have docker : 
+
+ ```
+docker run hello world
+
+ ```
+
+ we create a Dockerfile
+ ```
+FROM python:3.12.1
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked
+
+COPY predict.py model.bin ./
+
+EXPOSE 9696
+
+ENTRYPOINT ["uvicorn", "predict:app", "--host", "0.0.0.0", "--port", "9696"]
+ ```
+
+ To run the script from docker locally
+
+ ```
+docker build -t churn-prediction .
+
+ ```
+
+To run locally using docker
+```
+ docker run -t --rm -p 9696:9696 churn-prediction
+
+ ```
